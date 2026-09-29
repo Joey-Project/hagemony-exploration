@@ -8,14 +8,17 @@ repository is created from the template.
 ## Included
 
 - `.github/workflows/codex-review-gate.yml`
+- `.github/workflows/codex-review-gate-controller.yml`
+- `.github/CODEOWNERS`
 - `.gitignore`
 - `scripts/setup-ci.mjs`
 - this README
 
-The workflow writes the `codex/review-gate` status check and requests a controlled
-Codex review marker for each ready pull request head. It uses the owner-approved
-floating `v1` major for `JoeyTeng/codex-review-gate-action`; automatic compatible
-upgrades are intentional.
+The read-only verifier runs on pull request changes and produces the native
+`codex/github-review-gate` check for the current head. The controller handles
+Codex bot comment wake-ups and protected, single-PR manual `begin-review` or
+`reconcile` runs. Both workflows use the owner-approved floating `v2` major of
+`JoeyTeng/codex-review-gate-action`; compatible updates are intentional.
 
 ## Generate Project CI
 
@@ -61,31 +64,26 @@ Rust when those modules are selected.
 2. Run `node scripts/setup-ci.mjs` and commit the generated CI/tooling files.
 3. Install or lock generated dependencies where applicable, such as `pnpm install`
    for JavaScript/TypeScript or Markdown modules.
-4. Confirm `.github/workflows/codex-review-gate.yml` is present on the default
-   branch before requiring the status check.
-5. Enable the required status check with the bootstrap helper from
-   `JoeyTeng/codex-review-gate`:
-
-```bash
-node scripts/bootstrap-codex-review-gate.mjs --repo OWNER/REPO
-node scripts/bootstrap-codex-review-gate.mjs --repo OWNER/REPO --apply
-```
-
-The helper defaults to dry-run. It refuses to require `codex/review-gate` until
-the workflow exists on the repository default branch.
+4. Confirm both review-gate workflows and `.github/CODEOWNERS` are on the default
+   branch before requiring the new check.
+5. Follow the [v2 installation guide](https://github.com/Joey-Tools/codex-review-gate/blob/master/docs/install/human.md)
+   from `Joey-Tools/codex-review-gate` to stage the ruleset, exercise a separate
+   exact-head canary, and then require `codex/github-review-gate` from GitHub
+   Actions. Keep strict up-to-date, Code Owner review, stale-review dismissal,
+   and resolved-conversation protections. Do not require the check while these
+   workflows exist only on a feature branch.
 
 ## Optional Repository Variables
 
-- `CODEX_REVIEW_GATE_RUNNER_LABELS`: JSON runner label array. Defaults to
-  `["ubuntu-slim"]`; use `["ubuntu-latest"]` when `ubuntu-slim` is unavailable.
-- `CODEX_REVIEW_GATE_AUTO_RETRY=false`: disables scheduled retry jobs before a
-  runner is allocated.
-- `CODEX_REVIEW_GATE_EVENT_MODE`: `standard`, `comment-only`, or `full`.
-- `CODEX_REVIEW_GATE_BOT_LOGINS`: comma-separated additional Codex bot logins.
-- `CODEX_REVIEW_GATE_COMPLETION_SIGNAL_BUFFER_SECONDS`: clean completion buffer.
-- `CODEX_REVIEW_GATE_FAILED_FINDINGS_RECOVERY`: set to `false` to disable
-  same-head recovery after resolved Codex findings.
-- `CODEX_REVIEW_GATE_FAILED_FINDINGS_RECOVERY_MODE`: `head` or `fresh`.
+- `CODEX_REVIEW_GATE_USE_UBUNTU_LATEST=true`: use `ubuntu-latest` instead of the
+  default `ubuntu-slim` runner when needed.
+- `CODEX_REVIEW_GATE_LIMITS_PROFILE=expanded`: raise the supported scan limits
+  for an unusually large pull request when the gate summary directs it.
+
+The v2 workflows do not run a scheduled retry. When a provider result
+arrives only as a review or reaction, or an edited carrier needs reevaluation,
+run the default-branch controller's `reconcile` dispatch for that one pull
+request and its exact current head.
 
 ## Template Maintenance
 
