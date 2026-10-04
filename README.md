@@ -7,14 +7,16 @@ repository is created from the template.
 
 ## Included
 
-- `.github/workflows/codex-review-gate.yml`
+- `.github/workflows/codex-review-gate.yml` (canonical v2 verifier)
+- `.github/workflows/codex-review-gate-controller.yml` (canonical v2 controller)
 - `.gitignore`
 - `scripts/setup-ci.mjs`
 - this README
 
-The workflow writes the `codex/review-gate` status check and requests a controlled
-Codex review marker for each ready pull request head. It uses the owner-approved
-floating `v1` major for `JoeyTeng/codex-review-gate-action`; automatic compatible
+The verifier emits the native `codex/github-review-gate` CheckRun for supported
+pull requests targeting the default branch. The protected controller handles
+eligible Codex events and optional review requests. Both use the owner-approved
+floating `v2` major for `JoeyTeng/codex-review-gate-action`; automatic compatible
 upgrades are intentional.
 
 ## Generate Project CI
@@ -61,18 +63,22 @@ Rust when those modules are selected.
 2. Run `node scripts/setup-ci.mjs` and commit the generated CI/tooling files.
 3. Install or lock generated dependencies where applicable, such as `pnpm install`
    for JavaScript/TypeScript or Markdown modules.
-4. Confirm `.github/workflows/codex-review-gate.yml` is present on the default
-   branch before requiring the status check.
-5. Enable the required status check with the bootstrap helper from
-   `JoeyTeng/codex-review-gate`:
+4. Confirm both canonical v2 workflows and `.github/CODEOWNERS` are present on
+   the default branch. Follow the v2 consumer installation runbook in
+   `JoeyTeng/codex-review-gate` before requiring the native check.
+5. The required v2 check is `codex/github-review-gate`; install or transition
+   its ruleset only through the separately authorized repository-policy step.
+
+For reference, the canonical bootstrap helper is in `JoeyTeng/codex-review-gate`:
 
 ```bash
-node scripts/bootstrap-codex-review-gate.mjs --repo OWNER/REPO
-node scripts/bootstrap-codex-review-gate.mjs --repo OWNER/REPO --apply
+node scripts/bootstrap-codex-review-gate.mjs --repo OWNER/REPO --expected-legacy-inventory-sha256 SHA256
+node scripts/bootstrap-codex-review-gate.mjs --repo OWNER/REPO --expected-legacy-inventory-sha256 SHA256 --apply
 ```
 
-The helper defaults to dry-run. It refuses to require `codex/review-gate` until
-the workflow exists on the repository default branch.
+The helper defaults to dry-run and requires an approved legacy inventory before
+staging the v2 ruleset. Do not replace or disable the legacy requirement as
+part of this local consumer installation.
 
 ## Optional Repository Variables
 
